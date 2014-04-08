@@ -11,7 +11,7 @@ import thread
 from math import fabs
 #import daemon
 import ownet
-import psutil
+#import psutil
 from subprocess import call
 #import socket
 import json
@@ -31,7 +31,7 @@ class MessageHandler(mosquitto.Mosquitto):
     		if user != None:
     			self.username_pw_set(user,password)
 
-    		print "Connecting"
+    		print "Connecting to " + str(ip) 
     		self.connect(ip)
     		self.subscribe(self.prefix + "#", 0)
     		self.on_connect = self.mqtt_on_connect
@@ -81,8 +81,8 @@ class OwEventGuard(MessageHandler):
 
 		#self.StartKeepAliveProc()
 
-		self.owport = owserver[0]
-		self.owadress = owserver[1]
+		self.owport = owserver[1]
+		self.owadress = owserver[0]
 	
 		print "starting"
 		
@@ -233,7 +233,7 @@ class OwEventGuard(MessageHandler):
 	def Update(self,timestamp,event_type,id,value,threshold = 0.0):
 
 		#Update the sensor list.
-		HEventGuardEventGuardasChanged = self.UpdateSensorList(id,timestamp,value,threshold)
+		HasChanged = self.UpdateSensorList(id,timestamp,value,threshold)
 
 		if HasChanged:
 			#print "%s\t%s\t%s\t%s"%(timestamp,event_type,"1W"+id,str(value))
@@ -297,12 +297,12 @@ class OwEventGuard(MessageHandler):
 				sleep(0.1)
 			except Exception,e:
 				print e
-				self.CheckOwserver()
+				#self.CheckOwserver()
 				sleep(1)	
 
 			if self.failcount > 1:
 				print "Failcount threshhold reached"
-				self.RestoreOwserver()	
+				#self.RestoreOwserver()	
 		return
 
 	def CheckOwserver(self):
@@ -333,13 +333,13 @@ class OwEventGuard(MessageHandler):
     			owpid = int(owpidfile.readline())
 			print "Owserver pid should be: %i" % owpid
 			
-			if psutil.pid_exists(owpid):
-				print "Terminating faulty owserver process..."
-				owserver = psutil.Process(owpid)
+			#if psutil.pid_exists(owpid):
+			#	print "Terminating faulty owserver process..."
+			#	owserver = psutil.Process(owpid)
 				#owserver.send_signal(9)
 
-			else:
-				print "Process does not exists!"
+#			else:
+#				print "Process does not exists!"
 		except:
 			print "Unable to find pid file"
 
@@ -377,7 +377,7 @@ class OwEventGuard(MessageHandler):
 		return
 
 def	RunGuard():
-	EventGuard = OwEventGuard(('localhost', 34343), '1Wire:001')
+	EventGuard = OwEventGuard()
 
 	#g.say(g.CurrentTime() + '\tLOGICAL EVENT\t1wire event guard\tStarted\n\r')
 
