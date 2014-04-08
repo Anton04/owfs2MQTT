@@ -14,21 +14,13 @@ import ownet
 import psutil
 from subprocess import call
 #import socket
+import json
 
-class OwEventGuard(mosquitto.Mosquitto):
-	
-	root = None
-	alarms = None
-	current_state = {}
+class MessageHandler(mosquitto.Mosquitto):
 
-	#Temp fix.
-	PolledDevices = ["29.3C460C000000"]
-
-	def __init__(self,path,ip = "localhost", port = 1883, clientId = "owfs2MQTT", user = None, password = None, prefix = "hardware/1-wire/",owserver = ("127.0.0.1",4304)):
-		
-		#Init MQTT connection
+	def __init__(self,ip = "localhost", port = 1883, clientId = "owfs2MQTT", user = None, password = None, prefix = "hardware/1-wire/"):
 		mosquitto.Mosquitto.__init__(self,clientId)
-		
+	
 		self.prefix = prefix
 		self.ip = ip
     		self.port = port
@@ -42,14 +34,52 @@ class OwEventGuard(mosquitto.Mosquitto):
     		print "Connecting"
     		self.connect(ip)
     		self.subscribe(self.prefix + "#", 0)
-    		self.on_connect = self.X_on_connect
-    		self.on_message = self.X_on_message
+    		self.on_connect = self.mqtt_on_connect
+    		self.on_message = self.mqtt_on_message
+    		
+    		return
+    		
+    	def mqtt_on_connect(self, selfX,mosq, result):
+    		print "MQTT connected!"
+    		self.subscribe(self.prefic + "#", 0)
+    
+  	def mqtt_on_message(self, selfX,mosq, msg):
+    		print("RECIEVED MQTT MESSAGE: "+msg.topic + " " + str(msg.payload))
+    	
+    		return
+    	
+    	def ControlLoop(self):
+    		# schedule the client loop to handle messages, etc.
+      		while(True):
+      			self.loop()
+        		sleep(0.1)
+
+    	def SendEvent(self,timestamp,event_type,id,value):
+    		topic = self.prefix + "/" + id
+    		params = {"time":timestamp,"type":event_type,"value":value}
+    		packet = json.dumps(params)
+    		self.publish(topic, packet, 1)
+    	
+
+class OwEventGuard(MessageHandler):
+	
+	root = None
+	alarms = None
+	current_state = {}
+
+	#Temp fix.
+	PolledDevices = ["29.3C460C000000"]
+
+	def __init__(self,ip = "localhost", port = 1883, clientId = "owfs2MQTT", user = None, password = None, prefix = "hardware/1-wire/",owserver = ("127.0.0.1",4304)):
+		
+		#Init MQTT connection
+		MessageHandler.__init__(self,ip, port, clientId, user, password, prefix)
 		
 		#Other
 		self.VerifiedConnection = time()
 		self.SensorVerification = {}
 
-		self.StartKeepAliveProc()
+		#self.StartKeepAliveProc()
 
 		self.owport = owserver[0]
 		self.owadress = owserver[1]
@@ -58,8 +88,8 @@ class OwEventGuard(mosquitto.Mosquitto):
 		
 		self.failcount = 0
 		self.BusID = "81.4EC92F000000"		
-		self.BussVerifier = ownet.Sensor("uncached/12.E5F66C000000","localhost",4304)
-		self.CheckOwserver()
+		#self.BussVerifier = ownet.Sensor("uncached/12.E5F66C000000","localhost",4304)
+		#self.CheckOwserver()
 
 		self.root = ownet.Sensor("/",self.owadress,self.owport)
 		self.alarms = ownet.Sensor("/alarm",self.owadress,self.owport)
@@ -71,6 +101,18 @@ class OwEventGuard(mosquitto.Mosquitto):
 		self.devices_initiated = True
 		return
 		
+    
+  	def mqtt_on_message(self, selfX,mosq, msg):
+    		#try:
+    		if True:
+    			print("RECIEVED MQTT MESSAGE: "+msg.topic + " " + str(msg.payload))
+    			topics = msg.topic.split("/")
+
+		#Handle set commands here.
+	
+    		return
+    
+
 
 	def init_sensors(self):
 		#self.temp_sensor_list = []
@@ -174,31 +216,33 @@ class OwEventGuard(mosquitto.Mosquitto):
 			count += self.Update(timestamp,event_type,id,value)
 
 		#If no checks have been prefomed do one. 
-		if checks == 0:
-	        	if self.BussVerifier.sensed_BYTE != "":
-        	        	self.VerifiedConnection = time()
-                     	else:
-                		self.failcount += 1
+		if False:
+			if checks == 0:
+	        		if self.BussVerifier.sensed_BYTE != "":
+        	        		self.VerifiedConnection = time()
+                     		else:
+                			self.failcount += 1
 
-		print "Alarms: %i"%count
+			print "Alarms: %i"%count
 
-		if self.failcount:
-			print "Current failcount %i" % self.failcount
+			if self.failcount:
+				print "Current failcount %i" % self.failcount
 	
 		return count
 
 	def Update(self,timestamp,event_type,id,value,threshold = 0.0):
 
 		#Update the sensor list.
-		HasChanged = self.UpdateSensorList(id,timestamp,value,threshold)
+		HEventGuardEventGuardasChanged = self.UpdateSensorList(id,timestamp,value,threshold)
 
 		if HasChanged:
 			#print "%s\t%s\t%s\t%s"%(timestamp,event_type,"1W"+id,str(value))
-			self.SendEvent(timestamp,event_type,"1W"+id,value)
+			self.SendEvent(timestamp,event_type,id,value)
 			
 			return True
 
 		return False
+		
 
 	def CheckTemperatures(self,threshold = 0.0):
 		#Find the oldest value.
