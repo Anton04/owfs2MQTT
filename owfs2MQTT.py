@@ -3,38 +3,56 @@
 
 import sys
 
-
-from EventServer import Client
+import mosquitto 
 import os
 from time import gmtime, strftime, time, localtime, sleep
 import thread
-import asyncore
+#import asyncore
 from math import fabs
 #import daemon
 import ownet
 import psutil
 from subprocess import call
-import socket
-class Guard(Client):
+#import socket
 
-
+class OwEventGuard(mosquitto.Mosquitto):
+	
 	root = None
 	alarms = None
 	current_state = {}
 
+	#Temp fix.
 	PolledDevices = ["29.3C460C000000"]
 
-	def __init__(self,event_server = ("localhost",34343),name = "1W event guard",owserver = ("127.0.0.1",4304)):
-		#init 
-		Client.__init__(self,event_server,name)
+	def __init__(self,path,ip = "localhost", port = 1883, clientId = "owfs2MQTT", user = None, password = None, prefix = "hardware/1-wire/",owserver = ("127.0.0.1",4304)):
+		
+		#Init MQTT connection
+		mosquitto.Mosquitto.__init__(self,clientId)
+		
+		self.prefix = prefix
+		self.ip = ip
+    		self.port = port
+    		self.clientId = clientId
+		self.user = user
+    		self.password = password
+    		
+    		if user != None:
+    			self.username_pw_set(user,password)
 
+    		print "Connecting"
+    		self.connect(ip)
+    		self.subscribe(self.prefix + "#", 0)
+    		self.on_connect = self.X_on_connect
+    		self.on_message = self.X_on_message
+		
+		#Other
 		self.VerifiedConnection = time()
 		self.SensorVerification = {}
 
 		self.StartKeepAliveProc()
 
-		self.owport = 4304
-		self.owadress = "localhost"
+		self.owport = owserver[0]
+		self.owadress = owserver[1]
 	
 		print "starting"
 		
@@ -315,17 +333,17 @@ class Guard(Client):
 		return
 
 def	RunGuard():
-	OwEventGuard = Guard(('localhost', 34343), '1Wire:001')
+	EventGuard = OwEventGuard(('localhost', 34343), '1Wire:001')
 
 	#g.say(g.CurrentTime() + '\tLOGICAL EVENT\t1wire event guard\tStarted\n\r')
 
 	#Start new thread for server connunication
-	thread.start_new_thread(asyncore.loop,())
+	#thread.start_new_thread(EventGuard.loop,())
 
 	#Start a thread that monitors if things goes wrong and locks up. 
 	#OwEventGuard.StartKeepAliveProc()
 	while(1):
-		OwEventGuard.loop()
+		EventGuard.loop()
 
 if __name__ == '__main__':
 	#with daemon.DaemonContext():
