@@ -1,0 +1,126 @@
+#!/usr/bin/python
+
+
+import sys
+
+import mosquitto 
+
+class OwEventHandler(mosquitto.Mosquitto):
+
+	def def __init__(self,ip = "localhost", port = 1883, clientId = "1W2MQTT", user = "driver", password = "1234", prefix = "hardware/1-wire/",owserver = "127.0.0.1", owport = 4304):
+
+		mosquitto.Mosquitto.__init__(self,clientId)
+
+		self.prefix = prefix
+		self.ip = ip
+    		self.port = port
+    		self.clientId = clientId
+		self.user = user
+    		self.password = password
+    		
+    		if user != None:
+    			self.username_pw_set(user,password)
+
+    		print "Connecting"
+    		self.connect(ip)
+    		self.subscribe(self.prefix + "#", 0)
+    		self.on_connect = self.mqtt_on_connect
+    		self.on_message = self.mqtt_on_message
+    		
+    		
+    		# 1 wire stuff
+    		self.owserver = owserver
+    		self.owport = owport
+    		
+    		
+    		#Setup.
+    		
+    		return
+    		
+    	def mqtt_on_connect(self, selfX,mosq, result):
+    		print "MQTT connected!"
+    		self.subscribe(self.prefic + "#", 0)
+    
+  	def mqtt_on_message(self, selfX,mosq, msg):
+    		print("RECIEVED MQTT MESSAGE: "+msg.topic + " " + str(msg.payload))
+    	
+    		return
+    	
+    	def ControlLoop(self):
+    		# schedule the client loop to handle messages, etc.
+      		while(True):
+      			self.loop()
+        		sleep(0.1)
+        		
+        def PollOwServer(self):
+        	self.root = ownet.Sensor("/",self.owserver,self.owport)
+        	self.sensorlist = root.sensorList()
+        	
+        	#If there is no sensors we probably failied. 
+		if len(self.sensorlist) < 1:
+			return False
+			
+		self.CheckSensors(self.sensorlist,True)
+		
+		self.alarm = ownet.Sensor("/alarm",self.owserver,self.owport)
+		self.alarmlist = alarm.sensorList()
+		
+		while(True):
+			self.CheckSensors(self.alarmlist,False)
+			self.alarmlist = alarm.sensorList()
+			
+		
+	def Update(self,topic,value):
+
+                #Filter already sent stuff. 
+                if topic in self.Updates:
+                        if value == self.Updates[topic]:
+                                return False
+
+                timestamp = time.time()
+                msg = json.dumps({"time":timestamp,"value":value})
+
+                self.publish(topic,msg,1)
+                
+                return True
+                
+        def UpdateDS2406(self,sensor, init = False):
+        	
+        	id = str(e.family) +"/"+ str(e.id)
+        	values = sensor.sensed_ALL.split(",")
+        	
+        	#Loop trough pins
+        	for i in range(0,len(values)):
+        		topic = self.prefix+id+"/"+str(i)
+        		value = values[i]
+        	
+        		self.Update(topic,value)
+        		
+        	sensor.latch_BYTE = 0
+        	
+        	if init:
+        		if not sensor.set_alarm == 311:
+				sensor.set_alarm = 311		
+        		
+        	return
+		
+	def CheckSensors(self,sensorlist,init=False):
+		for sensor in sensorlist:
+			if not hasattr(sensor,"type"):
+				continue
+			
+			stype = sensor.type
+			if stype == "DS2406":
+				self.UpdateDS2406(sensor,init)
+			else:
+				continue
+	
+		return		
+			
+		
+if __name__ == '__main__':
+	
+	EventHandler = OwEventHandler()
+	EventHandler.PollOwServer()
+	
+	
