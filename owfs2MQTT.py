@@ -15,7 +15,7 @@ import psutil
 from subprocess import call
 #import socket
 import json
-
+ 
 class MessageHandler(mosquitto.Mosquitto):
 
 	def __init__(self,ip = "localhost", port = 1883, clientId = "owfs2MQTT", user = None, password = None, prefix = "hardware/1-wire/"):
