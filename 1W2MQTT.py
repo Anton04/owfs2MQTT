@@ -24,7 +24,7 @@ class OwEventHandler(mosquitto.Mosquitto):
     			self.username_pw_set(user,password)
 
     		print "Connecting"
-    		self.connect(ip)
+    		self.connect(ip,keepalive=10)
     		self.subscribe(self.prefix + "#", 0)
     		self.on_connect = self.mqtt_on_connect
     		self.on_message = self.mqtt_on_message
@@ -54,9 +54,9 @@ class OwEventHandler(mosquitto.Mosquitto):
     	
     	def ControlLoop(self):
     		# schedule the client loop to handle messages, etc.
-      		while(True):
-      			self.loop()
-        		time.sleep(0.1)
+      		self.loop_forever()
+		print "Closing connection to MQTT"
+        	time.sleep(1)
         		
         def PollOwServer(self):
         	self.root = ownet.Sensor("/",self.owserver,self.owport)
