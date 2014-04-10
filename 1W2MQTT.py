@@ -23,12 +23,13 @@ class OwEventHandler(mosquitto.Mosquitto):
     		if user != None:
     			self.username_pw_set(user,password)
 
+		self.will_set( topic = "system/1wire/", payload="Offline", qos=1, retain=True)
     		print "Connecting"
     		self.connect(ip,keepalive=10)
     		self.subscribe(self.prefix + "#", 0)
     		self.on_connect = self.mqtt_on_connect
     		self.on_message = self.mqtt_on_message
-    		
+    		self.publish(topic = "system/1wire/", payload="Online", qos=1, retain=True)
     		
     		# 1 wire stuff
     		self.owserver = owserver
@@ -39,7 +40,8 @@ class OwEventHandler(mosquitto.Mosquitto):
 
     		self.Updates = {}
 
-		thread.start_new_thread(self.ControlLoop,())	
+		#thread.start_new_thread(self.ControlLoop,())	
+		self.loop_start()
 
     		return
     		
