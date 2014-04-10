@@ -9,7 +9,7 @@ import thread
 
 class OwEventHandler(mosquitto.Mosquitto):
 
-	def __init__(self,ip = "localhost", port = 1883, clientId = "1W2MQTT", user = "driver", password = "1234", prefix = "hardware/1-wire/",owserver = "127.0.0.1", owport = 4304):
+	def __init__(self,ip = "localhost", port = 1883, clientId = "1W2MQTT", user = "driver", password = "1234", prefix = "1-wire",owserver = "127.0.0.1", owport = 4304):
 
 		mosquitto.Mosquitto.__init__(self,clientId)
 
@@ -23,13 +23,13 @@ class OwEventHandler(mosquitto.Mosquitto):
     		if user != None:
     			self.username_pw_set(user,password)
 
-		self.will_set( topic = "system/1wire/", payload="Offline", qos=1, retain=True)
+		self.will_set( topic = "system/" + self.prefix, payload="Offline", qos=1, retain=True)
     		print "Connecting"
     		self.connect(ip,keepalive=10)
-    		self.subscribe(self.prefix + "#", 0)
+    		self.subscribe(self.prefix + "/#", 0)
     		self.on_connect = self.mqtt_on_connect
     		self.on_message = self.mqtt_on_message
-    		self.publish(topic = "system/1wire/", payload="Online", qos=1, retain=True)
+    		self.publish(topic = "system/"+ self.prefix, payload="Online", qos=1, retain=True)
     		
     		# 1 wire stuff
     		self.owserver = owserver
@@ -47,7 +47,7 @@ class OwEventHandler(mosquitto.Mosquitto):
     		
     	def mqtt_on_connect(self, selfX,mosq, result):
     		print "MQTT connected!"
-    		self.subscribe(self.prefix + "#", 0)
+    		self.subscribe(self.prefix + "/#", 0)
     
   	def mqtt_on_message(self, selfX,mosq, msg):
     		print("RECIEVED MQTT MESSAGE: "+msg.topic + " " + str(msg.payload))
@@ -121,7 +121,7 @@ class OwEventHandler(mosquitto.Mosquitto):
         	
         	#Loop trough pins
         	for i in range(0,len(values)):
-        		topic = self.prefix+id+"/"+str(i)
+        		topic = self.prefix+"/"+id+"/"+str(i)
         		value = values[i]
         	
         		self.Update(topic,value)
