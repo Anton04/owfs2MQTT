@@ -1,0 +1,4 @@
+check process 1wire2MQTT matching "dmS 1wire2MQTT "
+        start program = "/usr/sbin/service 1wire2MQTT start"
+with timeout 30 seconds
+        stop program = "/usr/sbin/service 1wire2MQTT stop"
