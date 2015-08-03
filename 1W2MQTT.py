@@ -327,7 +327,7 @@ class OwEventHandler(mosquitto.Mosquitto):
         		
         	sensor.latch_BYTE = 0
         	
-        	if init:
+        	if init or sensor.initiated == False:
         		if not sensor.set_alarm == 311:
 				sensor.set_alarm = 311		
         		
