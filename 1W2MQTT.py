@@ -143,16 +143,19 @@ class OwEventHandler(mosquitto.Mosquitto):
 		for sensor in sensorlist:
 			sensor.present = True
 			sensor.alarm = 0
+			sensor.initiated = False
 
 		#Make a new list
 		for sensor in sensorlist:
 			try:
 				#Copy update time from old list if possible. 
 				new_dict[sensor] = old_dict[sensor]
+				
 			except KeyError:
 				#Not in old so new snesor. Indicate that it has never been checked. 
 				sensor.present = True
 				new_dict[sensor] = 0.0
+				sensor.initiated = False
 			
 		#Readd sensors that disconnected but pospone reading. 
 		for sensor in old_dict:
@@ -167,7 +170,7 @@ class OwEventHandler(mosquitto.Mosquitto):
 		return sorted(self.LastChecked.items(), key=operator.itemgetter(1))[:n]
 
 	def PrintLastCheckedTimes(self):
-		dictlist = [["Sensor","Time since update","update bar","Update reason","Present"]]
+		dictlist = [["Sensor","Time since update","update bar","Update reason","Present","Initiated"]]
 		now = time.time()
 
 		for sensor, value in self.LastChecked.iteritems():
@@ -204,8 +207,13 @@ class OwEventHandler(mosquitto.Mosquitto):
 					present="N"
 			except:
 				present="-"
+				
+			try:
+				initiated = sensor.initiated
+			except:
+				initiated = " "
 
-    			temp = [id,str(deltatime),("*" * bar) + (" " * (20-bar)),update,present ]
+    			temp = [id,str(deltatime),("*" * bar) + (" " * (20-bar)),update,present,initiated ]
     			dictlist.append(temp)
 
 		table = AsciiTable(dictlist)
