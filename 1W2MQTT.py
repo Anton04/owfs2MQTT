@@ -176,7 +176,7 @@ class OwEventHandler(mosquitto.Mosquitto):
 		return sorted(self.LastChecked.items(), key=operator.itemgetter(1))[:n]
 
 	def PrintLastCheckedTimes(self):
-		dictlist = [["Sensor","Time since update","update bar","Update reason","Present"]]
+		dictlist = [["Sensor","Time since update","update bar","Update reason","Present","Initiated"]]
 		now = time.time()
 
 		for sensor, value in self.LastChecked.iteritems():
@@ -215,11 +215,14 @@ class OwEventHandler(mosquitto.Mosquitto):
 				present="-"
 				
 			try:
-				initiated = sensor.initiated
+				if sensor.initiated:
+					initiated = "Y"
+				else:
+					initiated = "N"
 			except:
-				initiated = " "
+				initiated = "-"
 
-    			temp = [id,str(deltatime),("*" * bar) + (" " * (20-bar)),update,present]
+    			temp = [id,str(deltatime),("*" * bar) + (" " * (20-bar)),update,present,initiated]
     			dictlist.append(temp)
 
 		table = AsciiTable(dictlist)
