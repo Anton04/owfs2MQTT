@@ -331,6 +331,7 @@ class OwEventHandler(mosquitto.Mosquitto):
         		if not sensor.set_alarm == 311:
 				sensor.set_alarm = 311		
         		
+        		sensor.initiated = True
         	return
 		
 	def CheckSensors(self,sensorlist,init=False):
