@@ -149,7 +149,7 @@ class OwEventHandler(mosquitto.Mosquitto):
 		for sensor in sensorlist:
 			sensor.present = True
 			sensor.alarm = 0
-			sensor.initiated = False
+			sensor.initiated = True
 
 		#Make a new list
 		for sensor in sensorlist:
