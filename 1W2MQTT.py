@@ -71,6 +71,7 @@ class OwEventHandler(mosquitto.Mosquitto):
         	time.sleep(1)
         		
         def PollOwServer(self):
+		
         	#Init connection.
 		self.root = ownet.Sensor("/",self.owserver,self.owport)
 
@@ -86,51 +87,56 @@ class OwEventHandler(mosquitto.Mosquitto):
 		now = time.time()		
 
 		while(True):
+
+			try:
 			
-			#Update the LastChecked list with added or removed sensors.  
-                        self.LastChecked = self.CheckForNewSensors(self.LastChecked)
-
-			#Do some iterations then check for new sensors.			
-			for f in range(0,30):
-
-				#Sleep some to not overload the system with requests. 
-                                time.sleep(0.1)
-
-				#Time the loop
-				lasttime = now
-				now = time.time()
-				self.cycletime = now-lasttime
-
-				#Check if there is alarms and check them.
-				self.alarmlist = self.GetAlarmList()
-				for sensor in self.alarmlist:
-					sensor.alarm = now
-		
-				self.CheckSensors(self.alarmlist,False)
-				
-				#Update old values and non alarm sensors. Check one each iteration.
-
 				#Update the LastChecked list with added or removed sensors.  
-	        	        self.LastChecked = self.CheckForNewSensors(self.LastChecked)
+        	                self.LastChecked = self.CheckForNewSensors(self.LastChecked)
 
-				#Try to find the oldest one. 
-				try:
-					(sensor,checked) = self.GetOldestUpdate()[0]
-				except IndexError:
-					continue
+				#Do some iterations then check for new sensors.			
+				for f in range(0,30):
+
+					#Sleep some to not overload the system with requests. 
+		                 	time.sleep(0.1)
+	
+					#Time the loop
+					lasttime = now
+					now = time.time()
+					self.cycletime = now-lasttime
+
+					#Check if there is alarms and check them.
+					self.alarmlist = self.GetAlarmList()
+					for sensor in self.alarmlist:
+						sensor.alarm = now
+		
+					self.CheckSensors(self.alarmlist,False)
+				
+					#Update old values and non alarm sensors. Check one each iteration.
+	
+					#Update the LastChecked list with added or removed sensors.  
+	        		        self.LastChecked = self.CheckForNewSensors(self.LastChecked)
+
+					#Try to find the oldest one. 
+					try:
+						(sensor,checked) = self.GetOldestUpdate()[0]
+					except IndexError:
+						continue
 			
-				#Avoid updating sensors more than once each second.
-				if (now - checked) < 1.0:
-					continue
+					#Avoid updating sensors more than once each second.
+					if (now - checked) < 1.0:
+						continue
 			
-				#Check the sensor. 
-				self.CheckSensors([sensor])
-				self.LastCycled = sensor
+					#Check the sensor. 
+					self.CheckSensors([sensor])
+					self.LastCycled = sensor
 
-				#Debug print.
-				if f%1==0:
-                        		self.PrintLastCheckedTimes()
+					#Debug print.
+					if f%1==0:
+                        			self.PrintLastCheckedTimes()
 
+			except OverflowError:
+				print "OverflowError!!"
+				
 
 		return 
 
