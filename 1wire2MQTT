@@ -3,7 +3,7 @@
 # version 3 2015-05-10 (YYYY-MM-DD)
  
 ### BEGIN INIT INFO
-# Provides:   nodered
+# Provides:   1wire2MQTT
 # Required-Start: $local_fs $remote_fs screen-cleanup
 # Required-Stop:  $local_fs $remote_fs
 # Should-Start:   $network
@@ -18,9 +18,11 @@
  SERVICE='./1W2MQTT.py'
 
 
-
+#Change these two to match you preferences. 
 USERNAME='iot'
-APP_PATH="/home/$USERNAME/daemons"
+APP_PATH="/home/$USERNAME/repos/owfs2MQTT"
+
+
 HISTORY=1024
 INVOCATION="$SERVICE" 
 ME=`whoami`
